@@ -3,6 +3,7 @@ import os
 from torch.nn import Sequential, Linear, ReLU, CrossEntropyLoss
 from torch.optim import Adam, SGD
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 X = torch.load('data.pt')
@@ -14,6 +15,13 @@ Y_train, Y_val = Y[:100], Y[100:]
 
 CLASS_NAMES = ["setosa", "versicolor", "virginica"]
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class TrainParams(BaseModel):
     hidden_neurons: int = 6
@@ -51,7 +59,7 @@ def train(params: TrainParams):
 def predict(request: PredictRequest):
     if not os.path.exists("model.pt"):
         return {"error": "Model not trained yet"}
-    model = torch.load("model.pt")
+    model = torch.load("model.pt", weights_only=False)#change
     model.eval()
     with torch.no_grad():
         logits = model(torch.tensor([request.features]))
